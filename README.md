@@ -22,3 +22,6 @@ keyword argument or deleting the token cache.
 The models in this package are generated using [`datamodel-code-generator`](https://github.com/koxudaxi/datamodel-code-generator) and are not guaranteed
 to contain all of the information present in the full specification. The generated models are used to validate request payloads prior to
 API submission.
+
+## Additional Information
+To ask a question, make a suggestion, or otherwise get help with the NERIS framework, please visit [the NERIS helpdesk](https://neris.atlassian.net/servicedesk/customer/portals).
