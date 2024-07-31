@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neris_api_client"
-version = "0.1.3"
+version = "0.1.3post0"
 authors = [
   { name="Ben Coleman", email="ben.coleman@ul.org" },
 ]
@@ -25,5 +25,5 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ulfsri/neris"
-Issues = "https://github.com/ulfsri/neris/issues"
+Homepage = "https://github.com/ulfsri/neris-api-client"
+Issues = "https://github.com/ulfsri/neris-api-client/issues"
