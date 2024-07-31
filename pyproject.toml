@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neris_api_client"
+version = "0.1.1"
+authors = [
+  { name="Ben Coleman", email="ben.coleman@ul.org" },
+]
+description = "NERIS API Client"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "boto3",
+    "PyJWT",
+    "requests",
+    "pydantic>=2",
+    "typing_extensions",
+]
+
+[project.urls]
+Homepage = "https://github.com/ulfsri/neris"
+Issues = "https://github.com/ulfsri/neris/issues"
