@@ -24,4 +24,4 @@ to contain all of the information present in the full specification. The generat
 API submission.
 
 ## Additional Information
-To ask a question, make a suggestion, or otherwise get help with the NERIS framework, please visit [the NERIS helpdesk](https://neris.atlassian.net/servicedesk/customer/portals).
+To ask a question, make a suggestion, or otherwise get help with the NERIS API Client, please visit [the NERIS helpdesk](https://neris.atlassian.net/servicedesk/customer/portals).
