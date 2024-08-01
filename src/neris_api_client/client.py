@@ -250,9 +250,10 @@ class NerisApiClient(_NerisApiClient):
     def list_user_entity_memberships(self, sub: str | UUID) -> List[Dict[str, Any]]:
         return self._call("get", f"/user/{sub}/user_entity_membership")
 
-    def create_incident(
-        self, neris_id: str, body: str | Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def create_incident(self, neris_id: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
+        return self._call("post", f"/incident/{neris_id}", data=body, model=IncidentPayload)
+
+    def validate_incident(self, neris_id: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
         return self._call(
-            "post", f"/incident/{neris_id}", data=body, model=IncidentPayload
+            "post", f"/incident/{neris_id}/validate", data=body, model=IncidentPayload
         )
