@@ -3,6 +3,13 @@
 A Python class to interact with the NERIS API programmatically.
 
 ## Usage
+
+To install:
+```bash
+pip install neris-api-client
+```
+Package lives on pypi: [`NERIS API Client`](https://pypi.org/project/neris-api-client/)
+
 The client requires a username and password for authentication and authorization of requests unless the `env` argument is set to `local`
 at instantiation. The `local` environment is intended for development use on local machines and bypasses auth.
 
@@ -24,4 +31,4 @@ to contain all of the information present in the full specification. The generat
 API submission.
 
 ## Additional Information
-To ask a question, make a suggestion, or otherwise get help with the NERIS framework, please visit [the NERIS helpdesk](https://neris.atlassian.net/servicedesk/customer/portals).
+To ask a question, make a suggestion, or otherwise get help with the NERIS API Client, please visit [the NERIS helpdesk](https://neris.atlassian.net/servicedesk/customer/portals).
