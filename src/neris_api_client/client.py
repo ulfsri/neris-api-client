@@ -203,7 +203,12 @@ class _NerisApiClient:
                 e.args = e.args + (e.response.text,)
                 raise e
 
-        return res.json()
+        try:
+            response = res.json()
+        except requests.exceptions.JSONDecodeError:
+            response = res.text
+
+        return response
 
 
 class NerisApiClient(_NerisApiClient):
