@@ -1,3 +1,4 @@
+import os
 import jwt
 import json
 from enum import Enum
@@ -38,6 +39,8 @@ BASE_URLS = {
 COGNITO_CLIENT_CONFIG_URL = (
     "https://neris-{env}-public.s3.us-east-2.amazonaws.com/cognito_config.json"
 )
+
+os.environ["AWS_DEFAULT_REGION"] = "us-east-2"
 
 
 class _NerisApiClient:
