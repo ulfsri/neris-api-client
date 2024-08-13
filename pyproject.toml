@@ -26,4 +26,4 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/ulfsri/neris-api-client"
-Issues = "https://github.com/ulfsri/neris-api-client/issues"
+Issues = "https://neris.atlassian.net/servicedesk/customer/portal/3/group/3/create/10027"
