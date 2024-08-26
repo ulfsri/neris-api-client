@@ -16,7 +16,7 @@ at instantiation. The `local` environment is intended for development use on loc
 ```python
 from neris_api_client import NerisApiClient
 
-client = NerisApiClient(username="neris.user@email.co", password="*******", env="dev")
+client = NerisApiClient(username="neris.user@email.co", password="*******", env="test")
 
 # Get an entity
 entity = client.get_entity("FD24027240")
@@ -32,3 +32,7 @@ API submission.
 
 ## Additional Information
 To ask a question, make a suggestion, or otherwise get help with the NERIS API Client, please visit [the NERIS helpdesk](https://neris.atlassian.net/servicedesk/customer/portals).
+
+**Beta sandbox users**:
+- Be sure to use the `test` environment with the NERIS API Client. You will not be able to authenticate requests in the other environments.
+- For the beta testing period, your user is only authorized to perform actions on behalf of the FSRI Fire Department `FD24027214`.
