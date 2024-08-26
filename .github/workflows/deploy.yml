@@ -1,0 +1,29 @@
+name: Deploy neris-api-client to pypi
+
+on:
+  push:
+    branches:
+      - main
+      - feature/NDOS-73_add_cicd_to_api_client
+
+jobs:
+  deploy-api-client:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5.1.1
+        with:
+          # python-version: '3.10'
+          python-version-file: 'pyproject.toml' # this is set at >=3.8
+      
+      - name: Install Pipenv
+        run: pip install pipenv
+      
+      - name: Install requirements and build API client
+        run: |
+          pipenv install
+          pipenv run build
+            
