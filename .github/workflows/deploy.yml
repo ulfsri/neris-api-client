@@ -24,7 +24,7 @@ jobs:
       
       - name: Install requirements and build API client
         run: |
-          pipenv install
+          pipenv install -d
           pipenv run python -m build
 
       # - name: Publish PyPi package
