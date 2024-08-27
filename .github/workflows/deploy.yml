@@ -18,7 +18,6 @@ jobs:
         with:
           # python-version: '3.10'
           python-version-file: 'pyproject.toml' # this is set at >=3.8
-          cache: 'pipenv'
       
       - name: Install Pipenv
         run: curl https://raw.githubusercontent.com/kennethreitz/pipenv/master/get-pipenv.py | python
