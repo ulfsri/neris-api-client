@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+boto3 = "*"
+pyjwt = "*"
+pathlib = "*"
+requests = "*"
+pydantic = {extras = ["email"], version = "*"}
+
+[dev-packages]
+datamodel-code-generator = "*"
+twine = "*"
+build = "*"
+
+[requires]
+python_version = "3.10"
