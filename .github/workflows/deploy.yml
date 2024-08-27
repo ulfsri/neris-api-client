@@ -16,8 +16,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5.1.1
         with:
-          # python-version: '3.10'
-          python-version-file: 'pyproject.toml' # this is set at >=3.8
+          python-version: '3.10'
+          # python-version-file: 'pyproject.toml' # this is set at >=3.8
       
       - name: Install Pipenv
         run: curl https://raw.githubusercontent.com/kennethreitz/pipenv/master/get-pipenv.py | python
