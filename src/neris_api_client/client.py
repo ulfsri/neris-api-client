@@ -13,10 +13,13 @@ from pydantic import BaseModel
 
 from .models import (
     IncidentPayload,
-    CreateDepartmentPayload,
-    DepartmentPayload,
+    PatchUnitPayload,
     CreateUserPayload,
+    DepartmentPayload,
     UpdateUserPayload,
+    PatchStationPayload,
+    PatchDepartmentPayload,
+    CreateDepartmentPayload
 )
 
 __all__ = ("NerisApiClient",)
@@ -43,6 +46,14 @@ COGNITO_CLIENT_CONFIG_URL = (
 os.environ["AWS_DEFAULT_REGION"] = "us-east-2"
 
 
+class Encoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, requests.structures.CaseInsensitiveDict):
+            return { k: v for k, v in obj.items() }
+
+        return super().default(obj)
+
+
 class _NerisApiClient:
     def __init__(
         self,
@@ -50,12 +61,14 @@ class _NerisApiClient:
         password: str = "",
         env: Environment = Environment.LOCAL,
         use_cache: bool = True,
+        debug: bool = False,
     ):
         self._username = username
         self._password = password
         self._base_url = BASE_URLS[env]
         self._env = env
         self._use_cache = use_cache
+        self._debug = debug
 
         self._access_token: str = None
         self._access_token_exp: datetime = None
@@ -189,9 +202,29 @@ class _NerisApiClient:
             if isinstance(data, dict):
                 data = model.model_validate(data).model_dump(mode="json", by_alias=True)
 
+        debug: dict = {
+            "request": {
+                "url": f"{self._base_url}{path}",
+                "body": data,
+                "headers": self._session.headers,
+                "params": params,
+            },
+        }
+
         res = getattr(self._session, method)(
             f"{self._base_url}{path}", json=data, params=params
         )
+
+        debug.update({
+            "response": {
+                "status_code": res.status_code,
+                "headers": res.headers,
+                "content": res.text,
+            }
+        })
+
+        if self._debug:
+            print(json.dumps(debug, indent=4, cls=Encoder))
 
         try:
             res.raise_for_status()
@@ -264,4 +297,19 @@ class NerisApiClient(_NerisApiClient):
     def validate_incident(self, neris_id: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
         return self._call(
             "post", f"/incident/{neris_id}/validate", data=body, model=IncidentPayload
+        )
+
+    def patch_entity(self, neris_id: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
+        return self._call(
+            "patch", f"/entity/{neris_id}", data=body, model=PatchDepartmentPayload
+        )
+
+    def patch_station(self, neris_id_entity: str, neris_id_station: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
+        return self._call(
+            "patch", f"/entity/{neris_id_entity}/station/{neris_id_station}", data=body, model=PatchStationPayload
+        )
+
+    def patch_unit(self, neris_id_entity: str, neris_id_station: str, neris_id_unit: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
+        return self._call(
+            "patch", f"/entity/{neris_id}/station/{neris_id_station}/unit/{neris_id_unit}", data=body, model=PatchUnitPayload
         )
