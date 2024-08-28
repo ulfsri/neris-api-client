@@ -1,0 +1,30 @@
+name: Deploy neris-api-client to pypi
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-api-client:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5.1.1
+        with:
+          python-version: '3.10'
+          cache: 'pipenv'
+      
+      - name: Install Pipenv
+        run: curl https://raw.githubusercontent.com/kennethreitz/pipenv/master/get-pipenv.py | python
+      
+      - name: Install requirements and build API client
+        run: |
+          pipenv install -d
+          pipenv run python -m build
+
+      - name: Publish PyPi package
+        run: pipenv run twine upload --non-interactive --repository pypi --skip-existing -u "__token__" -p "${{secrets.PYPI_PROD_TOKEN}}" ./dist/neris_api_client-*
