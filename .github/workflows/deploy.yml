@@ -27,5 +27,5 @@ jobs:
           pipenv run python -m build
 
       - name: Publish PyPi package
-        run: pipenv run twine upload --non-interactive --repository pypi --skip-existing -u "__token__" -p "${{secrets.PYPI_PROD_TOKEN}}" ./dist/neris_api_client-{version}.*
+        run: pipenv run twine upload --non-interactive --repository pypi --skip-existing -u "__token__" -p "${{secrets.PYPI_PROD_TOKEN}}" ./dist/neris_api_client-*
             
