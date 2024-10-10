@@ -175,15 +175,15 @@ class Actions(Enum):
 
 
 class AssessmentPayload(BaseModel):
-    iso_rating: Optional[int] = Field(None, title="Iso Rating")
-    cpse_acredited: Optional[bool] = Field(None, title="Cpse Acredited")
-    caas_acredited: Optional[bool] = Field(None, title="Caas Acredited")
+    iso_rating: Optional[int] = Field(None, title="ISO Rating")
+    cpse_accredited: Optional[bool] = Field(None, title="CPSE Accredited")
+    caas_accredited: Optional[bool] = Field(None, title="CAAS Accredited")
 
 
 class AssessmentResponse(BaseModel):
-    iso_rating: Optional[int] = Field(None, title="Iso Rating")
-    cpse_acredited: Optional[bool] = Field(None, title="Cpse Acredited")
-    caas_acredited: Optional[bool] = Field(None, title="Caas Acredited")
+    iso_rating: Optional[int] = Field(None, title="ISO Rating")
+    cpse_accredited: Optional[bool] = Field(None, title="CPSE Accredited")
+    caas_accredited: Optional[bool] = Field(None, title="CAAS Accredited")
 
 
 class BodyUpsertLogoEntityNerisIdEntityLogoPut(BaseModel):
