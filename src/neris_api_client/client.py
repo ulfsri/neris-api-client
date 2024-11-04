@@ -19,7 +19,9 @@ from .models import (
     UpdateUserPayload,
     PatchStationPayload,
     PatchDepartmentPayload,
-    CreateDepartmentPayload
+    CreateDepartmentPayload,
+    PatchIncidentAction,
+    TypeIncidentStatusValue,
 )
 
 __all__ = ("NerisApiClient",)
@@ -49,7 +51,7 @@ os.environ["AWS_DEFAULT_REGION"] = "us-east-2"
 class Encoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, requests.structures.CaseInsensitiveDict):
-            return { k: v for k, v in obj.items() }
+            return {k: v for k, v in obj.items()}
 
         return super().default(obj)
 
@@ -148,9 +150,7 @@ class _NerisApiClient:
         self._access_token_exp = datetime.fromtimestamp(
             self._decode_token(self._access_token)["exp"]
         )
-        self._id_token_exp = datetime.fromtimestamp(
-            self._decode_token(self._id_token)["exp"]
-        )
+        self._id_token_exp = datetime.fromtimestamp(self._decode_token(self._id_token)["exp"])
 
     def _read_token_cache(self):
         if self._access_token_cache_path.exists():
@@ -160,9 +160,7 @@ class _NerisApiClient:
         if self._id_token_cache_path.exists():
             self._id_token = self._id_token_cache_path.read_text()
         if self._cognito_config_cache_path.exists():
-            self._cognito_config = json.loads(
-                self._cognito_config_cache_path.read_text()
-            )
+            self._cognito_config = json.loads(self._cognito_config_cache_path.read_text())
 
     def _write_token_cache(self):
         self._token_cache_path.mkdir(exist_ok=True)
@@ -190,15 +188,11 @@ class _NerisApiClient:
                 self._initiate_auth()
 
         if self._env != Environment.LOCAL:
-            self._session.headers.update(
-                {"Authorization": f"Bearer {self._access_token}"}
-            )
+            self._session.headers.update({"Authorization": f"Bearer {self._access_token}"})
 
         if model:
             if isinstance(data, str):
-                data = model.model_validate_json(data).model_dump(
-                    mode="json", by_alias=True
-                )
+                data = model.model_validate_json(data).model_dump(mode="json", by_alias=True)
             if isinstance(data, dict):
                 data = model.model_validate(data).model_dump(mode="json", by_alias=True)
 
@@ -211,17 +205,17 @@ class _NerisApiClient:
             },
         }
 
-        res = getattr(self._session, method)(
-            f"{self._base_url}{path}", json=data, params=params
-        )
+        res = getattr(self._session, method)(f"{self._base_url}{path}", json=data, params=params)
 
-        debug.update({
-            "response": {
-                "status_code": res.status_code,
-                "headers": res.headers,
-                "content": res.text,
+        debug.update(
+            {
+                "response": {
+                    "status_code": res.status_code,
+                    "headers": res.headers,
+                    "content": res.text,
+                }
             }
-        })
+        )
 
         if self._debug:
             print(json.dumps(debug, indent=4, cls=Encoder))
@@ -254,9 +248,7 @@ class NerisApiClient(_NerisApiClient):
     def create_entity(self, body: str | Dict[str, Any]) -> Dict[str, Any]:
         return self._call("post", "/entity/", body, model=CreateDepartmentPayload)
 
-    def update_entity(
-        self, neris_id: str, body: str | Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def update_entity(self, neris_id: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
         return self._call("put", f"/entity/{neris_id}", body, model=DepartmentPayload)
 
     def get_user(self, sub: str | UUID) -> Dict[str, Any]:
@@ -265,9 +257,7 @@ class NerisApiClient(_NerisApiClient):
     def create_user(self, body: str | Dict[str, Any]) -> Dict[str, Any]:
         return self._call("post", "/user", body, model=CreateUserPayload)
 
-    def update_user(
-        self, sub: str | UUID, body: str | Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def update_user(self, sub: str | UUID, body: str | Dict[str, Any]) -> Dict[str, Any]:
         return self._call("put", f"/user/{sub}", body, model=UpdateUserPayload)
 
     def delete_user(self, sub: str | UUID) -> None:
@@ -279,9 +269,7 @@ class NerisApiClient(_NerisApiClient):
     def delete_user_entity_membership(self, sub: str | UUID, neris_id: str) -> None:
         self._call("delete", f"/user/{sub}/user_entity_membership/{neris_id}")
 
-    def update_user_entity_activation(
-        self, sub: str | UUID, neris_id: str, active: bool
-    ) -> None:
+    def update_user_entity_activation(self, sub: str | UUID, neris_id: str, active: bool) -> None:
         self._call(
             "put",
             f"/user/{sub}/user_entity_activation/{neris_id}",
@@ -300,16 +288,47 @@ class NerisApiClient(_NerisApiClient):
         )
 
     def patch_entity(self, neris_id: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
+        return self._call("patch", f"/entity/{neris_id}", data=body, model=PatchDepartmentPayload)
+
+    def patch_station(
+        self, neris_id_entity: str, neris_id_station: str, body: str | Dict[str, Any]
+    ) -> Dict[str, Any]:
         return self._call(
-            "patch", f"/entity/{neris_id}", data=body, model=PatchDepartmentPayload
+            "patch",
+            f"/entity/{neris_id_entity}/station/{neris_id_station}",
+            data=body,
+            model=PatchStationPayload,
         )
 
-    def patch_station(self, neris_id_entity: str, neris_id_station: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
+    def patch_unit(
+        self,
+        neris_id_entity: str,
+        neris_id_station: str,
+        neris_id_unit: str,
+        body: str | Dict[str, Any],
+    ) -> Dict[str, Any]:
         return self._call(
-            "patch", f"/entity/{neris_id_entity}/station/{neris_id_station}", data=body, model=PatchStationPayload
+            "patch",
+            f"/entity/{neris_id}/station/{neris_id_station}/unit/{neris_id_unit}",
+            data=body,
+            model=PatchUnitPayload,
         )
 
-    def patch_unit(self, neris_id_entity: str, neris_id_station: str, neris_id_unit: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
+    def patch_incident(
+        self, neris_id_entity: str, neris_id_incident: str, body: str | Dict[str, Any]
+    ) -> Dict[str, Any]:
         return self._call(
-            "patch", f"/entity/{neris_id}/station/{neris_id_station}/unit/{neris_id_unit}", data=body, model=PatchUnitPayload
+            "patch",
+            f"/incident/{neris_id_entity}/{neris_id_incident}",
+            data=body,
+            model=PatchIncidentAction,
+        )
+
+    def update_incident_status(
+        self, neris_id_entity: str, neris_id_incident: str, status: TypeIncidentStatusValue
+    ) -> Dict[str, Any]:
+        return self._call(
+            "put",
+            f"/incident/{neris_id_entity}/{neris_id_incident}/status",
+            data={"status": str(status)},
         )
