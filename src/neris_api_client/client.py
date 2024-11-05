@@ -116,11 +116,37 @@ class _NerisApiClient:
 
     @_fetch_cognito_config
     def _initiate_auth(self) -> None:
-        res = self._cognito.initiate_auth(
-            AuthFlow="USER_PASSWORD_AUTH",
-            AuthParameters={"USERNAME": self._username, "PASSWORD": self._password},
-            ClientId=self._cognito_config["client_id"],
-        )
+        try:
+            res = self._cognito.initiate_auth(
+                AuthFlow="USER_PASSWORD_AUTH",
+                AuthParameters={"USERNAME": self._username, "PASSWORD": self._password},
+                ClientId=self._cognito_config["client_id"],
+            )
+        except self._cognito.exceptions.LimitExceededException as e:
+            print(e.response["message"])
+            return
+
+        if "AuthenticationResult" not in res:
+            challenge_name = res["ChallengeName"]
+
+            answer = input(f"Provide MFA auth challenge answer for {challenge_name}: ")
+
+            while True:
+                try:
+                    res = self._cognito.respond_to_auth_challenge(
+                        ClientId=self._cognito_config["client_id"],
+                        Session=res["Session"],
+                        ChallengeName=challenge_name,
+                        ChallengeResponses={
+                            "USERNAME": self._username,
+                            f"{challenge_name}_CODE": answer,
+                        },
+                    )
+                    break
+                except self._cognito.exceptions.CodeMismatchException as e:
+                    print(e.response["message"])
+                    # Keep trying until the answer is correct
+                    answer = input(f"Provide MFA auth challenge answer for {challenge_name}: ")
 
         self._access_token = res["AuthenticationResult"]["AccessToken"]
         self._refresh_token = res["AuthenticationResult"]["RefreshToken"]
