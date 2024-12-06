@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
-from src.neris_api_client import NerisApiClient, Config
+from src.neris_api_client import NerisApiClient
 
 if __name__ == "__main__":
-  load_dotenv()  
+  load_dotenv()
   client = NerisApiClient()
 
   client._update_auth()
