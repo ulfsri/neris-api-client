@@ -7,6 +7,7 @@ name = "neris_api_client"
 version = "1.1.0"
 authors = [
   { name="Ben Coleman", email="ben.coleman@ul.org" },
+  { name="Tommy Messbauer", email="thomas.messbauer@ul.org" },
 ]
 description = "NERIS API Client"
 readme = "README.md"
@@ -17,11 +18,9 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "boto3",
-    "PyJWT",
     "requests",
     "pydantic[email]>=2",
-    "typing_extensions",
+    "dotenv",
 ]
 
 [project.urls]

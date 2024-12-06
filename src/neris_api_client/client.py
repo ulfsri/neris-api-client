@@ -3,13 +3,12 @@ from http import HTTPStatus
 import json
 from uuid import UUID
 from typing import List, Optional, Dict, Any
-from pathlib import Path
 from datetime import datetime, timedelta
 
 import requests
 from pydantic import BaseModel
 
-from neris_api_client.config import Config, GrantType, TokenSet
+from .config import Config, GrantType, TokenSet
 
 from .models import (
     IncidentPayload,
@@ -37,20 +36,34 @@ class Encoder(json.JSONEncoder):
 
 class _NerisApiClient:
     config: Config
-    tokens: TokenSet | None = TokenSet(access_token="", refresh_token="", expires_at=datetime.min())
+    tokens: TokenSet | None = TokenSet(access_token="", refresh_token="", expires_at=datetime.min)
     _session: requests.Session = requests.Session()
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config | None = None):
+        if config is None:
+            config = Config()  # by default it loads from env
+
+        match config.grant_type:
+            case GrantType.CLIENT_CREDENTIALS:
+                assert config.client_id is not None
+                assert config.client_secret is not None
+            case GrantType.PASSWORD:
+                assert config.username is not None
+                assert config.password is not None
+            case _:
+                raise Exception("bad grant type. must be ""password"" or ""client_credentials""")
+
         self.config = config
 
     def _update_auth(self):
         res: requests.Response | None = None
+        token_url = f"{self.config.base_url}/token"
 
         if self.tokens.expires_at <= datetime.now() and len(self.tokens.refresh_token) == 0:
             match self.config.grant_type:
                 case GrantType.PASSWORD:
                     res = self._session.post(
-                        '/token', 
+                        token_url,
                         headers={},
                         json={
                             "grant_type": GrantType.PASSWORD, 
@@ -64,19 +77,34 @@ class _NerisApiClient:
                     client_creds = base64.b64encode(f"{self.config.client_id}:{self.config.client_secret}".encode("utf-8")).decode("utf-8")
                     
                     res = self._session.post(
-                        '/token', 
+                        token_url,
                         headers={"Authorization": f"Basic {client_creds}"},
                         json={"grant_type": GrantType.CLIENT_CREDENTIALS},
                     )
 
         elif self.tokens.expires_at <= datetime.now():
              res = self._session.post(
-                '/token', 
+                token_url,
                 headers={"Authorization": f"Basic {client_creds}"},
                 json={ 
                     "grant_type": "refresh_token",
                     "refresh_token": self.tokens.refresh_token,
                 },
+            )
+
+        if self.config.debug:
+            print(
+                json.dumps(
+                    {
+                        "token_response": {
+                            "status_code": res.status_code,
+                            "headers": res.headers,
+                            "content": res.text,
+                        }
+                    }, 
+                    indent=4, 
+                    cls=Encoder,
+                ),
             )
 
 
@@ -108,7 +136,7 @@ class _NerisApiClient:
                 data = model.model_validate(data).model_dump(mode="json", by_alias=True)
 
         
-        res = getattr(self._session, method)(f"{self._base_url}{path}", json=data, params=params)
+        res = getattr(self._session, method)(f"{self.config.base_url}{path}", json=data, params=params)
 
         if self.config.debug:
             print(

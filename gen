@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+
+datamodel-codegen \
+    --url http://localhost:8000/openapi.json \
+    --input-file-type openapi \
+    --output src/neris_api_client/models.py \
+    --output-model-type pydantic_v2.BaseModel
