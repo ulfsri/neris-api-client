@@ -5,7 +5,6 @@ if __name__ == "__main__":
   load_dotenv()
   client = NerisApiClient()
 
-  client._update_auth()
+  client.create_api_integration("VN00000000", "Api integration Test")
   print(client.tokens)
-
   

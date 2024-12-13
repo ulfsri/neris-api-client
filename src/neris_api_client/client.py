@@ -272,3 +272,6 @@ class NerisApiClient(_NerisApiClient):
             f"/incident/{neris_id_entity}/{neris_id_incident}/status",
             data={"status": str(status)},
         )
+    
+    def create_api_integration(self, neris_id: str, title: str) -> Dict[str, Any]:
+        return self._call("post", f"/account/integration/{neris_id}", json={ "title": title })
