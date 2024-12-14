@@ -66,16 +66,16 @@ class _NerisApiClient:
                         token_url,
                         headers={},
                         json={
-                            "grant_type": GrantType.PASSWORD, 
-                            "username": self.config.username, 
+                            "grant_type": GrantType.PASSWORD,
+                            "username": self.config.username,
                             "password": self.config.password,
                         },
                     )
-                    
+
 
                 case GrantType.CLIENT_CREDENTIALS:
                     client_creds = base64.b64encode(f"{self.config.client_id}:{self.config.client_secret}".encode("utf-8")).decode("utf-8")
-                    
+
                     res = self._session.post(
                         token_url,
                         headers={"Authorization": f"Basic {client_creds}"},
@@ -86,7 +86,7 @@ class _NerisApiClient:
              res = self._session.post(
                 token_url,
                 headers={"Authorization": f"Basic {client_creds}"},
-                json={ 
+                json={
                     "grant_type": "refresh_token",
                     "refresh_token": self.tokens.refresh_token,
                 },
@@ -101,8 +101,8 @@ class _NerisApiClient:
                             "headers": res.headers,
                             "content": res.text,
                         }
-                    }, 
-                    indent=4, 
+                    },
+                    indent=4,
                     cls=Encoder,
                 ),
             )
@@ -116,7 +116,7 @@ class _NerisApiClient:
                 refresh_token=got["refresh_token"],
                 expires_at=datetime.now() + timedelta(seconds=got["expires_in"]),
             )
-                
+
 
     def _call(
         self,
@@ -135,7 +135,7 @@ class _NerisApiClient:
             if isinstance(data, dict):
                 data = model.model_validate(data).model_dump(mode="json", by_alias=True)
 
-        
+
         res = getattr(self._session, method)(f"{self.config.base_url}{path}", json=data, params=params)
 
         if self.config.debug:
@@ -148,14 +148,14 @@ class _NerisApiClient:
                             "headers": self._session.headers,
                             "params": params,
                         },
-                    
+
                         "response": {
                             "status_code": res.status_code,
                             "headers": res.headers,
                             "content": res.text,
                         }
-                    }, 
-                    indent=4, 
+                    },
+                    indent=4,
                     cls=Encoder,
                 ),
             )
@@ -272,6 +272,6 @@ class NerisApiClient(_NerisApiClient):
             f"/incident/{neris_id_entity}/{neris_id_incident}/status",
             data={"status": str(status)},
         )
-    
+
     def create_api_integration(self, neris_id: str, title: str) -> Dict[str, Any]:
-        return self._call("post", f"/account/integration/{neris_id}", json={ "title": title })
+        return self._call("post", f"/account/integration/{neris_id}", data={ "title": title })
