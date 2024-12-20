@@ -5,8 +5,8 @@ name = "pypi"
 
 [packages]
 requests = "*"
-pydantic = "*"
 python-dotenv = "*"
+pydantic = {extras = ["email"], version = "*"}
 
 [dev-packages]
 twine = "*"
@@ -15,3 +15,6 @@ datamodel-code-generator = {extras = ["http"], version = "*"}
 
 [requires]
 python_version = "3.10"
+
+[pipenv]
+allow_prereleases = true
