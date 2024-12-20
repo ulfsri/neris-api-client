@@ -1,15 +1,14 @@
-import os
-import jwt
+import base64
+from http import HTTPStatus
 import json
-from enum import Enum
 from uuid import UUID
-from typing import List, Optional, Dict, Any, Callable
-from pathlib import Path
+from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 
-import boto3
 import requests
 from pydantic import BaseModel
+
+from .config import Config, GrantType, TokenSet
 
 from .models import (
     IncidentPayload,
@@ -27,27 +26,6 @@ from .models import (
 __all__ = ("NerisApiClient",)
 
 
-class Environment(str, Enum):
-    DEV = "dev"
-    PROD = "prod"
-    LOCAL = "local"
-    TEST = "test"
-
-
-BASE_URLS = {
-    Environment.LOCAL: "http://localhost:8000",
-    Environment.DEV: "https://api-dev.neris.fsri.org/v1",
-    Environment.PROD: "https://api.neris.fsri.org/v1",
-    Environment.TEST: "https://api-test.neris.fsri.org/v1",
-}
-
-COGNITO_CLIENT_CONFIG_URL = (
-    "https://neris-{env}-public.s3.us-east-2.amazonaws.com/cognito_config.json"
-)
-
-os.environ["AWS_DEFAULT_REGION"] = "us-east-2"
-
-
 class Encoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, requests.structures.CaseInsensitiveDict):
@@ -57,147 +35,120 @@ class Encoder(json.JSONEncoder):
 
 
 class _NerisApiClient:
-    def __init__(
-        self,
-        username: str = "",
-        password: str = "",
-        env: Environment = Environment.LOCAL,
-        use_cache: bool = True,
-        debug: bool = False,
-    ):
-        self._username = username
-        self._password = password
-        self._base_url = BASE_URLS[env]
-        self._env = env
-        self._use_cache = use_cache
-        self._debug = debug
+    config: Config
+    tokens: TokenSet | None = TokenSet(access_token="", refresh_token="", expires_at=datetime.min)
+    _session: requests.Session = requests.Session()
 
-        self._access_token: str = None
-        self._access_token_exp: datetime = None
-        self._refresh_token: str = None
-        self._id_token: str = None
-        self._id_token_exp: datetime = None
-        self._cognito_config = None
-        self._session: requests.Session = requests.Session()
+    def __init__(self, config: Config | None = None):
+        if config is None:
+            config = Config()  # by default it loads from env
 
-        # Don't mess with auth on localhost
-        if env == Environment.LOCAL:
-            # Non-existent auth token never expires
-            self._use_cache = False
-            self._access_token_exp = datetime.now() + timedelta(weeks=52)
-            return
+        match config.grant_type:
+            case GrantType.CLIENT_CREDENTIALS:
+                assert config.client_id is not None
+                assert config.client_secret is not None
+            case GrantType.PASSWORD:
+                assert config.username is not None
+                assert config.password is not None
+            case _:
+                raise Exception("Bad grant type. Must be \"password\" or \"client_credentials\"")
 
-        self._cognito = boto3.client("cognito-idp")
+        self.config = config
 
-        self._token_cache_path = Path("./.token_cache")
-        self._access_token_cache_path = self._token_cache_path / "access_token"
-        self._refresh_token_cache_path = self._token_cache_path / "refresh_token"
-        self._id_token_cache_path = self._token_cache_path / "id_token"
-        self._cognito_config_cache_path = self._token_cache_path / "cognito_config.json"
+    def _update_auth(self) -> None:
+        res: requests.Response | None = None
+        token_url: str = f"{self.config.base_url}/token"
 
-        if self._use_cache:
-            self._read_token_cache()
-
-        if self._access_token:
-            self._set_token_exp()
-
-        if not self._access_token:
-            self._initiate_auth()
-
-    def _fetch_cognito_config(f: Callable) -> Callable:
-        def fetch_cognito_config(self):
-            if self._cognito_config is None:
-                self._cognito_config = requests.get(
-                    COGNITO_CLIENT_CONFIG_URL.format(env=self._env)
-                ).json()
-            return f(self)
-
-        return fetch_cognito_config
-
-    @_fetch_cognito_config
-    def _initiate_auth(self) -> None:
-        try:
-            res = self._cognito.initiate_auth(
-                AuthFlow="USER_PASSWORD_AUTH",
-                AuthParameters={"USERNAME": self._username, "PASSWORD": self._password},
-                ClientId=self._cognito_config["client_id"],
-            )
-        except self._cognito.exceptions.LimitExceededException as e:
-            print(e.response["message"])
-            return
-
-        if "AuthenticationResult" not in res:
-            challenge_name = res["ChallengeName"]
-
-            answer = input(f"Provide MFA auth challenge answer for {challenge_name}: ")
-
-            while True:
-                try:
-                    res = self._cognito.respond_to_auth_challenge(
-                        ClientId=self._cognito_config["client_id"],
-                        Session=res["Session"],
-                        ChallengeName=challenge_name,
-                        ChallengeResponses={
-                            "USERNAME": self._username,
-                            f"{challenge_name}_CODE": answer,
+        if self.tokens.expires_at <= datetime.now() and not self.tokens.refresh_token:
+            match self.config.grant_type:
+                case GrantType.PASSWORD:
+                    res = self._session.post(
+                        token_url,
+                        headers={},
+                        json={
+                            "grant_type": GrantType.PASSWORD,
+                            "username": self.config.username,
+                            "password": self.config.password,
                         },
                     )
-                    break
-                except self._cognito.exceptions.CodeMismatchException as e:
-                    print(e.response["message"])
-                    # Keep trying until the answer is correct
-                    answer = input(f"Provide MFA auth challenge answer for {challenge_name}: ")
 
-        self._access_token = res["AuthenticationResult"]["AccessToken"]
-        self._refresh_token = res["AuthenticationResult"]["RefreshToken"]
-        self._id_token = res["AuthenticationResult"]["IdToken"]
+                case GrantType.CLIENT_CREDENTIALS:
+                    client_creds = base64.b64encode(f"{self.config.client_id}:{self.config.client_secret}".encode("utf-8")).decode("utf-8")
 
-        self._set_token_exp()
+                    res = self._session.post(
+                        token_url,
+                        headers={"Authorization": f"Basic {client_creds}"},
+                        json={"grant_type": GrantType.CLIENT_CREDENTIALS},
+                    )
 
-        if self._use_cache:
-            self._write_token_cache()
+        elif self.tokens.expires_at <= datetime.now():
+            match self.config.grant_type:
+                case GrantType.PASSWORD:
+                    res = self._session.post(
+                        token_url,
+                        # No basic auth needed for Cognito refresh tokens
+                        headers={},
+                        json={
+                            "grant_type": "refresh_token",
+                            "refresh_token": self.tokens.refresh_token,
+                        },
+                    )
 
-    @_fetch_cognito_config
-    def _refresh_auth(self) -> None:
-        res = self._cognito.initiate_auth(
-            AuthFlow="REFRESH_TOKEN_AUTH",
-            AuthParameters={"REFRESH_TOKEN": self._refresh_token},
-            ClientId=self._cognito_config["client_id"],
-        )
+                case GrantType.CLIENT_CREDENTIALS:
+                    res = self._session.post(
+                        token_url,
+                        headers={"Authorization": f"Basic {client_creds}"},
+                        json={
+                            "grant_type": "refresh_token",
+                            "refresh_token": self.tokens.refresh_token,
+                        },
+                    )
 
-        self._access_token = res["AuthenticationResult"]["AccessToken"]
-        self._id_token = res["AuthenticationResult"]["IdToken"]
+        if not res:
+            return
 
-        self._set_token_exp()
+        while True:
+            if self.config.debug:
+                print(
+                    json.dumps(
+                        {
+                            "token_response": {
+                                "status_code": res.status_code,
+                                "headers": res.headers,
+                                "content": res.text,
+                            }
+                        },
+                        indent=4,
+                        cls=Encoder,
+                    ),
+                )
 
-        self._write_token_cache()
+            got: dict = res.json()
 
-    def _set_token_exp(self):
-        self._access_token_exp = datetime.fromtimestamp(
-            self._decode_token(self._access_token)["exp"]
-        )
-        self._id_token_exp = datetime.fromtimestamp(self._decode_token(self._id_token)["exp"])
+            # Successfully generated tokens
+            if res.status_code == HTTPStatus.OK:
+                self.tokens = TokenSet(
+                    access_token=got["access_token"],
+                    refresh_token=got["refresh_token"],
+                    expires_at=datetime.now() + timedelta(seconds=got["expires_in"]),
+                )
 
-    def _read_token_cache(self):
-        if self._access_token_cache_path.exists():
-            self._access_token = self._access_token_cache_path.read_text()
-        if self._refresh_token_cache_path.exists():
-            self._refresh_token = self._refresh_token_cache_path.read_text()
-        if self._id_token_cache_path.exists():
-            self._id_token = self._id_token_cache_path.read_text()
-        if self._cognito_config_cache_path.exists():
-            self._cognito_config = json.loads(self._cognito_config_cache_path.read_text())
+                break
 
-    def _write_token_cache(self):
-        self._token_cache_path.mkdir(exist_ok=True)
-        self._access_token_cache_path.write_text(self._access_token)
-        self._refresh_token_cache_path.write_text(self._refresh_token)
-        self._id_token_cache_path.write_text(self._id_token)
-        self._cognito_config_cache_path.write_text(json.dumps(self._cognito_config))
+            # Respond to MFA challenge
+            elif res.status_code == HTTPStatus.ACCEPTED:
+                code: str = input(f"Provide MFA code for {got['challenge_name']}: ")
 
-    @staticmethod
-    def _decode_token(token: str, verify: bool = False):
-        return jwt.decode(token, options={"verify_signature": verify})
+                res = self._session.post(
+                    token_url,
+                    headers={},
+                    json={
+                        "grant_type": got["challenge_name"],
+                        "username": self.config.username,
+                        "session": got["session"],
+                        got["challenge_name"]: code,
+                    }
+                )
 
     def _call(
         self,
@@ -207,14 +158,8 @@ class _NerisApiClient:
         params: Optional[Dict[str, Any]] = None,
         model: Optional[BaseModel] = None,
     ):
-        if self._access_token_exp - datetime.now() <= timedelta(seconds=0):
-            try:
-                self._refresh_auth()
-            except:
-                self._initiate_auth()
-
-        if self._env != Environment.LOCAL:
-            self._session.headers.update({"Authorization": f"Bearer {self._access_token}"})
+        self._update_auth()
+        self._session.headers.update({"Authorization": f"Bearer {self.tokens.access_token}"})
 
         if model:
             if isinstance(data, str):
@@ -222,39 +167,41 @@ class _NerisApiClient:
             if isinstance(data, dict):
                 data = model.model_validate(data).model_dump(mode="json", by_alias=True)
 
-        debug: dict = {
-            "request": {
-                "url": f"{self._base_url}{path}",
-                "body": data,
-                "headers": self._session.headers,
-                "params": params,
-            },
-        }
 
-        res = getattr(self._session, method)(f"{self._base_url}{path}", json=data, params=params)
+        res = getattr(self._session, method)(f"{self.config.base_url}{path}", json=data, params=params)
 
-        debug.update(
-            {
-                "response": {
-                    "status_code": res.status_code,
-                    "headers": res.headers,
-                    "content": res.text,
-                }
-            }
-        )
+        if self.config.debug:
+            print(
+                json.dumps(
+                    {
+                        "request": {
+                            "url": f"{self.config.base_url}{path}",
+                            "body": data,
+                            "headers": self._session.headers,
+                            "params": params,
+                        },
 
-        if self._debug:
-            print(json.dumps(debug, indent=4, cls=Encoder))
+                        "response": {
+                            "status_code": res.status_code,
+                            "headers": res.headers,
+                            "content": res.text,
+                        }
+                    },
+                    indent=4,
+                    cls=Encoder,
+                ),
+            )
 
         try:
             res.raise_for_status()
         except requests.exceptions.HTTPError as e:
             try:
                 e.args = e.args + (e.response.json(),)
-                raise e
             except requests.exceptions.JSONDecodeError as f:
                 e.args = e.args + (e.response.text,)
-                raise e
+            finally:
+                print(str(e))
+                return res
 
         try:
             response = res.json()
@@ -288,6 +235,13 @@ class NerisApiClient(_NerisApiClient):
 
     def delete_user(self, sub: str | UUID) -> None:
         self._call("delete", f"/user/{sub}")
+
+    def create_user_role_entity_set_attachment(self, sub_user: str | UUID, nuid_role: str | UUID, nuid_entity_set: str | UUID) -> Dict[str, Any]:
+        return self._call(
+            "post",
+            "/auth/user_role_entity_set_attachment",
+            params={"sub_user": str(sub_user), "nuid_role": str(nuid_role), "nuid_entity_set": str(nuid_entity_set)},
+        )
 
     def create_user_entity_membership(self, sub: str | UUID, neris_id: str) -> None:
         self._call("post", f"/user/{sub}/user_entity_membership/{neris_id}")
@@ -358,3 +312,15 @@ class NerisApiClient(_NerisApiClient):
             f"/incident/{neris_id_entity}/{neris_id_incident}/status",
             data={"status": str(status)},
         )
+
+    def create_api_integration(self, neris_id: str, title: str) -> Dict[str, Any]:
+        return self._call("post", f"/account/integration/{neris_id}", data={ "title": title })
+
+    def generate_api_secret(self, client_id: str) -> Dict[str, Any]:
+        return self._call("post", f"/account/credential/{client_id}")
+
+    def list_integrations(self, neris_id: str) -> Dict[str, Any]:
+        return self._call("get", f"/account/integration/{neris_id}/list")
+
+    def enroll_integration(self, neris_id: str, client_id: UUID | str) -> Dict[str, Any]:
+        return self._call("post", f"/account/enrollment/{neris_id}/{client_id}")

@@ -4,16 +4,17 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-boto3 = "*"
-pyjwt = "*"
-pathlib = "*"
 requests = "*"
+python-dotenv = "*"
 pydantic = {extras = ["email"], version = "*"}
 
 [dev-packages]
-datamodel-code-generator = "*"
 twine = "*"
 build = "*"
+datamodel-code-generator = {extras = ["http"], version = "*"}
 
 [requires]
 python_version = "3.10"
+
+[pipenv]
+allow_prereleases = true
