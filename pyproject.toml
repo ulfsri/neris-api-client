@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neris_api_client"
-version = "1.2.0rc1"
+version = "1.2.0rc2"
 authors = [
   { name="Ben Coleman", email="ben.coleman@ul.org" },
   { name="Tommy Messbauer", email="thomas.messbauer@ul.org" },
@@ -20,7 +20,7 @@ classifiers = [
 dependencies = [
     "requests",
     "pydantic[email]>=2",
-    "dotenv",
+    "python-dotenv",
 ]
 
 [project.urls]
