@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import json
 from dotenv import load_dotenv
 from argparse import ArgumentParser
 
@@ -18,4 +17,4 @@ if __name__ == "__main__":
 
     res = client.create_api_integration(neris_id=args.neris_id, title=args.title)
 
-    print(json.dumps(res.json(), indent=2))
+    print(res.json())
