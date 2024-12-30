@@ -8,22 +8,48 @@ To install:
 ```bash
 pip install neris-api-client
 ```
-Package lives on pypi: [`NERIS API Client`](https://pypi.org/project/neris-api-client/)
+Package published on PyPi: [`NERIS API Client`](https://pypi.org/project/neris-api-client/)
 
-The client requires a username and password for authentication and authorization of requests unless the `env` argument is set to `local`
-at instantiation. The `local` environment is intended for development use on local machines and bypasses auth.
+**Auth with password `auth` flow**
 
+All config parameters can be specified as environment variables prefixed with `NERIS_` e.g. `NERIS_GRANT_TYPE=password`.
 ```python
-from neris_api_client import NerisApiClient
+from neris_api_client import NerisApiClient, Config
 
-client = NerisApiClient(username="neris.user@email.co", password="*******", env="test")
+client = NerisApiClient(
+    Config(
+        base_url="https://api-test.neris.fsri.org/v1",
+        grant_type="password",
+        username="neris.user@email.co",
+        password="*******",
+    )
+)
+
+# Get an entity
+entity = client.get_entity("FD24027240")
+
+# If MFA enabled, prompt for auth challenge answer
+Provide MFA code for email_otp: ******
+```
+
+**Auth with `client_credentials` auth flow**
+
+All config parameters can be specified as environment variables prefixed with `NERIS_` e.g. `NERIS_GRANT_TYPE=client_credentials`.
+```python
+from neris_api_client import NerisApiClient, Config
+
+client = NerisApiClient(
+    Config(
+        base_url="https://api-test.neris.fsri.org/v1",
+        grant_type="client_credentials",
+        client_id="********************",
+        client_secret="***************",
+    )
+)
 
 # Get an entity
 entity = client.get_entity("FD24027240")
 ```
-
-API auth tokens are cached locally in `./.token_cache`. If there are auth issues first try instantiating the client with `use_cache=False`
-keyword argument or deleting the token cache.
 
 ## Disclaimer
 The models in this package are generated using [`datamodel-code-generator`](https://github.com/koxudaxi/datamodel-code-generator) and are not guaranteed
@@ -34,5 +60,5 @@ API submission.
 To ask a question, make a suggestion, or otherwise get help with the NERIS API Client, please visit [the NERIS helpdesk](https://neris.atlassian.net/servicedesk/customer/portals).
 
 **Beta sandbox users**:
-- Be sure to use the `test` environment with the NERIS API Client. You will not be able to authenticate requests in the other environments.
+- Be sure to use the base URL `https://api-test.neris.fsri.org/v1` with the NERIS API Client. You will not be able to authenticate requests in the other environments.
 - For the beta testing period, your user is only authorized to perform actions on behalf of the FSRI Fire Department `FD24027214`.
