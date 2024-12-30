@@ -2,13 +2,15 @@
 
 A Python class to interact with the NERIS API programmatically.
 
-## Usage
+## Installation
 
 To install:
 ```bash
 pip install neris-api-client
 ```
 Package published on PyPi: [`NERIS API Client`](https://pypi.org/project/neris-api-client/)
+
+## Usage
 
 **Auth with password `auth` flow**
 
@@ -46,6 +48,27 @@ client = NerisApiClient(
         client_secret="***************",
     )
 )
+
+# Get an entity
+entity = client.get_entity("FD24027240")
+```
+
+**Using environment varables to instantiate the library**
+
+[Configuration should be stored in the environment](https://12factor.net/config). The following uses `dotenv` to load the configuration, but you can use whatever you like. In the cloud, you might load all of these values into the environment from an encrypted parameter store. 
+
+All variables prefixed are prefixed with `NERIS_`
+
+* See [env.example](./examples/.env.example) for the parameter options. 
+* Store the `/env` file in the current working directory. 
+
+```python
+from dotenv import load_dotenv
+from neris_api_client import NerisApiClient, Config
+
+ # Credentials must be defined in .env
+load_dotenv()
+client = NerisApiClient()
 
 # Get an entity
 entity = client.get_entity("FD24027240")
