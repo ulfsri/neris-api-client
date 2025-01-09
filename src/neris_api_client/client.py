@@ -161,7 +161,7 @@ class _NerisApiClient:
         self._update_auth()
         self._session.headers.update({"Authorization": f"Bearer {self.tokens.access_token}"})
 
-        if model:
+        if self.config.validate and model:
             if isinstance(data, str):
                 data = model.model_validate_json(data).model_dump(mode="json", by_alias=True)
             if isinstance(data, dict):
