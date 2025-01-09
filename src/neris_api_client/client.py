@@ -65,7 +65,7 @@ class _NerisApiClient:
                     res = self._session.post(
                         token_url,
                         headers={},
-                        json={
+                        data={
                             "grant_type": GrantType.PASSWORD,
                             "username": self.config.username,
                             "password": self.config.password,
