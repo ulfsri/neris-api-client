@@ -16,11 +16,13 @@ class Config:
     client_id: str | None = None
     client_secret: str | None = None
     grant_type: GrantType | None = None
+    validate: bool | None = None
 
     def __post_init__(self):
         # env var handling
         self.base_url = self.base_url or os.getenv("NERIS_BASE_URL")
         self.debug = self.debug if self.debug is not None else os.getenv("NERIS_DEBUG") == "true"
+        self.validate = self.validate if self.validate is not None else os.getenv("NERIS_VALIDATE") == "true"
 
         match os.getenv("NERIS_GRANT_TYPE"):
             case GrantType.PASSWORD:
