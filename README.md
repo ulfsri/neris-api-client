@@ -2,7 +2,7 @@
 
 A Python class to interact with the NERIS API programmatically.
 
-> **NOTE:** Due to the changes and transition to using Oauth 2.0 version 1 is now deprecated. Please upgrade to version 2. You can do that in a package manager with the following update: `neris-api-client = ">=1.3"` or in your `requirements.txt` you can do `neris-api-client >=1.3`. Or you can install with `pip install neris_api_client>=1.3.`.
+> **NOTE:** Due to the changes and transition to using Oauth 2.0 version 1.2 is now deprecated. Please upgrade to version 1.3. You can do that in a package manager with the following update: `neris-api-client = ">=1.3"` or in your `requirements.txt` you can do `neris-api-client >=1.3`. Or you can install with `pip install neris_api_client>=1.3.`.
 
 ## Versioning
 
