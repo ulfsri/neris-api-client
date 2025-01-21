@@ -64,8 +64,8 @@ class _NerisApiClient:
                 case GrantType.PASSWORD:
                     res = self._session.post(
                         token_url,
-                        headers={},
-                        json={
+                        headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                        data={
                             "grant_type": GrantType.PASSWORD,
                             "username": self.config.username,
                             "password": self.config.password,
@@ -77,8 +77,8 @@ class _NerisApiClient:
 
                     res = self._session.post(
                         token_url,
-                        headers={"Authorization": f"Basic {client_creds}"},
-                        json={"grant_type": GrantType.CLIENT_CREDENTIALS},
+                        headers={"Authorization": f"Basic {client_creds}", 'Content-Type': 'application/x-www-form-urlencoded'},
+                        data={"grant_type": GrantType.CLIENT_CREDENTIALS},
                     )
 
         elif self.tokens.expires_at <= datetime.now():
@@ -87,8 +87,8 @@ class _NerisApiClient:
                     res = self._session.post(
                         token_url,
                         # No basic auth needed for Cognito refresh tokens
-                        headers={},
-                        json={
+                        headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                        data={
                             "grant_type": "refresh_token",
                             "refresh_token": self.tokens.refresh_token,
                         },
@@ -97,8 +97,8 @@ class _NerisApiClient:
                 case GrantType.CLIENT_CREDENTIALS:
                     res = self._session.post(
                         token_url,
-                        headers={"Authorization": f"Basic {client_creds}"},
-                        json={
+                        headers={"Authorization": f"Basic {client_creds}", 'Content-Type': 'application/x-www-form-urlencoded'},
+                        data={
                             "grant_type": "refresh_token",
                             "refresh_token": self.tokens.refresh_token,
                         },
@@ -141,8 +141,8 @@ class _NerisApiClient:
 
                 res = self._session.post(
                     token_url,
-                    headers={},
-                    json={
+                    headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                    data={
                         "grant_type": got["challenge_name"],
                         "username": self.config.username,
                         "session": got["session"],
