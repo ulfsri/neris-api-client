@@ -80,6 +80,14 @@ client = NerisApiClient()
 entity = client.get_entity("FD24027240")
 ```
 
+## Additional config parameters
+
+| Parameter | Description                                                 |
+| --------- | ----------------------------------------------------------- |
+| debug     | Controls whether the application outputs debug information. |
+| validate  | Controls whether the client performs model validations.     |
+
+
 ## Disclaimer
 The models in this package are generated using [`datamodel-code-generator`](https://github.com/koxudaxi/datamodel-code-generator) and are not guaranteed
 to contain all of the information present in the full specification. The generated models are used to validate request payloads prior to
