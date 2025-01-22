@@ -86,7 +86,7 @@ class _NerisApiClient:
                     res = self._session.post(
                         token_url,
                         # No basic auth needed for Cognito refresh tokens
-                        headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                        headers={"Content-Type": "application/x-www-form-urlencoded"},
                         data={
                             "grant_type": "refresh_token",
                             "refresh_token": self.tokens.refresh_token,
@@ -96,8 +96,12 @@ class _NerisApiClient:
                 case GrantType.CLIENT_CREDENTIALS:
                     res = self._session.post(
                         token_url,
+                        # Basic auth required for NERIS refresh tokens
                         headers={"Authorization": f"Basic {self.client_creds}", "Content-Type": "application/x-www-form-urlencoded"},
-                        data={"grant_type": GrantType.CLIENT_CREDENTIALS},
+                        data={
+                            "grant_type": "refresh_token",
+                            "refresh_token": self.tokens.refresh_token,
+                        },
                     )
 
         if not res:
