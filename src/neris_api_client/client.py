@@ -47,6 +47,7 @@ class _NerisApiClient:
             case GrantType.CLIENT_CREDENTIALS:
                 assert config.client_id is not None
                 assert config.client_secret is not None
+                self.client_creds = base64.b64encode(f"{config.client_id}:{config.client_secret}".encode("utf-8")).decode("utf-8")
             case GrantType.PASSWORD:
                 assert config.username is not None
                 assert config.password is not None
@@ -73,11 +74,9 @@ class _NerisApiClient:
                     )
 
                 case GrantType.CLIENT_CREDENTIALS:
-                    client_creds = base64.b64encode(f"{self.config.client_id}:{self.config.client_secret}".encode("utf-8")).decode("utf-8")
-
                     res = self._session.post(
                         token_url,
-                        headers={"Authorization": f"Basic {client_creds}", 'Content-Type': 'application/x-www-form-urlencoded'},
+                        headers={"Authorization": f"Basic {self.client_creds}", "Content-Type": "application/x-www-form-urlencoded"},
                         data={"grant_type": GrantType.CLIENT_CREDENTIALS},
                     )
 
@@ -87,7 +86,7 @@ class _NerisApiClient:
                     res = self._session.post(
                         token_url,
                         # No basic auth needed for Cognito refresh tokens
-                        headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                        headers={"Content-Type": "application/x-www-form-urlencoded"},
                         data={
                             "grant_type": "refresh_token",
                             "refresh_token": self.tokens.refresh_token,
@@ -97,7 +96,8 @@ class _NerisApiClient:
                 case GrantType.CLIENT_CREDENTIALS:
                     res = self._session.post(
                         token_url,
-                        headers={"Authorization": f"Basic {client_creds}", 'Content-Type': 'application/x-www-form-urlencoded'},
+                        # Basic auth required for NERIS refresh tokens
+                        headers={"Authorization": f"Basic {self.client_creds}", "Content-Type": "application/x-www-form-urlencoded"},
                         data={
                             "grant_type": "refresh_token",
                             "refresh_token": self.tokens.refresh_token,
