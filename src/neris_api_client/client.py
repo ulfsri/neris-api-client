@@ -316,8 +316,8 @@ class NerisApiClient(_NerisApiClient):
     def create_api_integration(self, neris_id: str, title: str) -> Dict[str, Any]:
         return self._call("post", f"/account/integration/{neris_id}", data={ "title": title })
 
-    def generate_api_secret(self, client_id: str) -> Dict[str, Any]:
-        return self._call("post", f"/account/credential/{client_id}")
+    def generate_api_secret(self, client_id: str, title: str) -> Dict[str, Any]:
+        return self._call("post", f"/account/credential/{client_id}", data={ "title": title })
 
     def list_integrations(self, neris_id: str) -> Dict[str, Any]:
         return self._call("get", f"/account/integration/{neris_id}/list")
