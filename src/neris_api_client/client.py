@@ -309,7 +309,7 @@ class NerisApiClient(_NerisApiClient):
     ) -> Dict[str, Any]:
         return self._call(
             "put",
-            f"/incident/{neris_id_entity}/{neris_id_incident}/status",
+            f"/incident/{neris_id_entity}/{neris_id_incident}/incident_status",
             data={"status": str(status)},
         )
 
