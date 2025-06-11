@@ -13,13 +13,15 @@ from .config import Config, GrantType, TokenSet
 from .models import (
     IncidentPayload,
     PatchUnitPayload,
+    CreateUnitPayload,
     CreateUserPayload,
     DepartmentPayload,
     UpdateUserPayload,
+    PatchIncidentAction,
     PatchStationPayload,
+    CreateStationPayload,
     PatchDepartmentPayload,
     CreateDepartmentPayload,
-    PatchIncidentAction,
     TypeIncidentStatusValue,
 )
 
@@ -47,12 +49,14 @@ class _NerisApiClient:
             case GrantType.CLIENT_CREDENTIALS:
                 assert config.client_id is not None
                 assert config.client_secret is not None
-                self.client_creds = base64.b64encode(f"{config.client_id}:{config.client_secret}".encode("utf-8")).decode("utf-8")
+                self.client_creds = base64.b64encode(
+                    f"{config.client_id}:{config.client_secret}".encode("utf-8")
+                ).decode("utf-8")
             case GrantType.PASSWORD:
                 assert config.username is not None
                 assert config.password is not None
             case _:
-                raise Exception("Bad grant type. Must be \"password\" or \"client_credentials\"")
+                raise Exception('Bad grant type. Must be "password" or "client_credentials"')
 
         self.config = config
 
@@ -65,7 +69,7 @@ class _NerisApiClient:
                 case GrantType.PASSWORD:
                     res = self._session.post(
                         token_url,
-                        headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                        headers={"Content-Type": "application/x-www-form-urlencoded"},
                         data={
                             "grant_type": GrantType.PASSWORD,
                             "username": self.config.username,
@@ -76,7 +80,10 @@ class _NerisApiClient:
                 case GrantType.CLIENT_CREDENTIALS:
                     res = self._session.post(
                         token_url,
-                        headers={"Authorization": f"Basic {self.client_creds}", "Content-Type": "application/x-www-form-urlencoded"},
+                        headers={
+                            "Authorization": f"Basic {self.client_creds}",
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
                         data={"grant_type": GrantType.CLIENT_CREDENTIALS},
                     )
 
@@ -97,7 +104,10 @@ class _NerisApiClient:
                     res = self._session.post(
                         token_url,
                         # Basic auth required for NERIS refresh tokens
-                        headers={"Authorization": f"Basic {self.client_creds}", "Content-Type": "application/x-www-form-urlencoded"},
+                        headers={
+                            "Authorization": f"Basic {self.client_creds}",
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
                         data={
                             "grant_type": "refresh_token",
                             "refresh_token": self.tokens.refresh_token,
@@ -141,13 +151,13 @@ class _NerisApiClient:
 
                 res = self._session.post(
                     token_url,
-                    headers={'Content-Type': 'application/x-www-form-urlencoded'},
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
                     data={
                         "grant_type": got["challenge_name"],
                         "username": self.config.username,
                         "session": got["session"],
                         got["challenge_name"]: code,
-                    }
+                    },
                 )
 
     def _call(
@@ -167,8 +177,9 @@ class _NerisApiClient:
             if isinstance(data, dict):
                 data = model.model_validate(data).model_dump(mode="json", by_alias=True)
 
-
-        res = getattr(self._session, method)(f"{self.config.base_url}{path}", json=data, params=params)
+        res = getattr(self._session, method)(
+            f"{self.config.base_url}{path}", json=data, params=params
+        )
 
         if self.config.debug:
             print(
@@ -180,12 +191,11 @@ class _NerisApiClient:
                             "headers": self._session.headers,
                             "params": params,
                         },
-
                         "response": {
                             "status_code": res.status_code,
                             "headers": res.headers,
                             "content": res.text,
-                        }
+                        },
                     },
                     indent=4,
                     cls=Encoder,
@@ -236,11 +246,17 @@ class NerisApiClient(_NerisApiClient):
     def delete_user(self, sub: str | UUID) -> None:
         self._call("delete", f"/user/{sub}")
 
-    def create_user_role_entity_set_attachment(self, sub_user: str | UUID, nuid_role: str | UUID, nuid_entity_set: str | UUID) -> Dict[str, Any]:
+    def create_user_role_entity_set_attachment(
+        self, sub_user: str | UUID, nuid_role: str | UUID, nuid_entity_set: str | UUID
+    ) -> Dict[str, Any]:
         return self._call(
             "post",
             "/auth/user_role_entity_set_attachment",
-            params={"sub_user": str(sub_user), "nuid_role": str(nuid_role), "nuid_entity_set": str(nuid_entity_set)},
+            params={
+                "sub_user": str(sub_user),
+                "nuid_role": str(nuid_role),
+                "nuid_entity_set": str(nuid_entity_set),
+            },
         )
 
     def create_user_entity_membership(self, sub: str | UUID, neris_id: str) -> None:
@@ -270,6 +286,11 @@ class NerisApiClient(_NerisApiClient):
     def patch_entity(self, neris_id: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
         return self._call("patch", f"/entity/{neris_id}", data=body, model=PatchDepartmentPayload)
 
+    def create_station(self, neris_id_entity: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
+        return self._call(
+            "post", f"/entity/{neris_id_entity}/station", data=body, model=CreateStationPayload
+        )
+
     def patch_station(
         self, neris_id_entity: str, neris_id_station: str, body: str | Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -278,6 +299,16 @@ class NerisApiClient(_NerisApiClient):
             f"/entity/{neris_id_entity}/station/{neris_id_station}",
             data=body,
             model=PatchStationPayload,
+        )
+
+    def create_unit(
+        self, neris_id_entity: str, neris_id_station: str, body: str | Dict[str, Any]
+    ) -> Dict[str, Any]:
+        return self._call(
+            "post",
+            f"/entity/{neris_id_entity}/station/{neris_id_station}",
+            data=body,
+            model=CreateUnitPayload,
         )
 
     def patch_unit(
@@ -314,10 +345,10 @@ class NerisApiClient(_NerisApiClient):
         )
 
     def create_api_integration(self, neris_id: str, title: str) -> Dict[str, Any]:
-        return self._call("post", f"/account/integration/{neris_id}", data={ "title": title })
+        return self._call("post", f"/account/integration/{neris_id}", data={"title": title})
 
     def generate_api_secret(self, client_id: str, title: str) -> Dict[str, Any]:
-        return self._call("post", f"/account/credential/{client_id}", data={ "title": title })
+        return self._call("post", f"/account/credential/{client_id}", data={"title": title})
 
     def list_integrations(self, neris_id: str) -> Dict[str, Any]:
         return self._call("get", f"/account/integration/{neris_id}/list")
