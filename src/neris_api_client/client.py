@@ -13,13 +13,15 @@ from .config import Config, GrantType, TokenSet
 from .models import (
     IncidentPayload,
     PatchUnitPayload,
+    CreateUnitPayload,
     CreateUserPayload,
     DepartmentPayload,
     UpdateUserPayload,
+    PatchIncidentAction,
     PatchStationPayload,
+    CreateStationPayload,
     PatchDepartmentPayload,
     CreateDepartmentPayload,
-    PatchIncidentAction,
     TypeIncidentStatusValue,
 )
 
@@ -270,6 +272,11 @@ class NerisApiClient(_NerisApiClient):
     def patch_entity(self, neris_id: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
         return self._call("patch", f"/entity/{neris_id}", data=body, model=PatchDepartmentPayload)
 
+    def create_station(self, neris_id_entity: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
+        return self._call(
+            "post", f"/entity/{neris_id_entity}/station", data=body, model=CreateStationPayload
+        )
+
     def patch_station(
         self, neris_id_entity: str, neris_id_station: str, body: str | Dict[str, Any]
     ) -> Dict[str, Any]:
@@ -278,6 +285,16 @@ class NerisApiClient(_NerisApiClient):
             f"/entity/{neris_id_entity}/station/{neris_id_station}",
             data=body,
             model=PatchStationPayload,
+        )
+
+    def create_unit(
+        self, neris_id_entity: str, neris_id_station: str, body: str | Dict[str, Any]
+    ) -> Dict[str, Any]:
+        return self._call(
+            "post",
+            f"/entity/{neris_id_entity}/station/{neris_id_station}",
+            data=body,
+            model=CreateUnitPayload,
         )
 
     def patch_unit(
