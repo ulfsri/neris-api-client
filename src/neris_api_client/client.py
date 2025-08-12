@@ -2,7 +2,7 @@ import base64
 from http import HTTPStatus
 import json
 from uuid import UUID
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime, timedelta
 
 import requests
@@ -282,6 +282,46 @@ class NerisApiClient(_NerisApiClient):
         return self._call(
             "post", f"/incident/{neris_id}/validate", data=body, model=IncidentPayload
         )
+
+    def list_incidents(
+        self,
+        *,
+        neris_id_entity: str | None = None,
+        incident_types: list[str] | None = None,
+        incident_types_set_operation: Literal["UNION", "INTERSECTION"] | None = None,
+        call_create_start: datetime | None = None,
+        call_create_end: datetime | None = None,
+        incident_number: str | None = None,
+        dispatch_incident_number: str | None = None,
+        status: list[Literal["APPROVED", "PENDING_APPROVAL", "REJECTED", "SUBMITTED"]] | None = None,
+        last_modified: str | None = None,
+        sort_by: Literal["call_create", "neris_id_entity", "incident_number", "dispatch_incident_number", "status", "last_modified"] | None = None,
+        sort_direction: Literal["ASCENDING", "DESCENDING"] | None = None,
+        page_size: int | None = None,
+        cursor: str | None = None,
+    ) -> dict[str, Any]:
+        params = dict(
+            neris_id_entity=neris_id_entity,
+            incident_types=incident_types,
+            incident_types_set_operation=incident_types_set_operation,
+            call_create_start=call_create_start and call_create_start.isoformat(),
+            call_create_end=call_create_end and call_create_end.isoformat(),
+            incident_number=incident_number,
+            dispatch_incident_number=dispatch_incident_number,
+            status=status,
+            last_modified=last_modified,
+            sort_by=sort_by,
+            sort_direction=sort_direction,
+            page_size=page_size,
+            cursor=cursor,
+        )
+
+        # delete null params
+        for k in list(params.keys()):
+            if params[k] is None:
+                del params[k]
+
+        return self._call("get", "/incident", params=params)
 
     def patch_entity(self, neris_id: str, body: str | Dict[str, Any]) -> Dict[str, Any]:
         return self._call("patch", f"/entity/{neris_id}", data=body, model=PatchDepartmentPayload)
