@@ -11,6 +11,10 @@ from pydantic import BaseModel
 from .config import Config, GrantType, TokenSet
 
 from .models import (
+    DeptSortBy,
+    StatesTerrs,
+    SortDirection,
+    TypeEntityValue,
     IncidentPayload,
     PatchUnitPayload,
     CreateUnitPayload,
@@ -227,6 +231,37 @@ class NerisApiClient(_NerisApiClient):
 
     def get_entity(self, neris_id: str) -> Dict[str, Any]:
         return self._call("get", f"/entity/{neris_id}")
+
+    def list_entities(
+        self,
+        name: str | None = None,
+        neris_id: str | None = None,
+        state: StatesTerrs | None = None,
+        entity_subtype: TypeEntityValue | None = None,
+        last_modified: str | None = None,
+        page_number: int | None = None,
+        page_size: int | None = None,
+        sort_by: DeptSortBy | None = None,
+        sort_direction: SortDirection | None = None,
+    ) -> Dict[str, Any]:
+        params = dict(
+            name=name,
+            neris_id=neris_id,
+            state=state,
+            entity_subtype=entity_subtype,
+            last_modified=last_modified,
+            page_number=page_number,
+            page_size=page_size,
+            sort_by=sort_by,
+            sort_direction=sort_direction,
+        )
+
+        # delete null params
+        for k in list(params.keys()):
+            if params[k] is None:
+                del params[k]
+
+        return self._call("get", "/entity", params=params)
 
     def create_entity(self, body: str | Dict[str, Any]) -> Dict[str, Any]:
         return self._call("post", "/entity/", body, model=CreateDepartmentPayload)
