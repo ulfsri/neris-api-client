@@ -3,6 +3,8 @@ from datetime import datetime
 from enum import Enum
 import os
 
+DEFAULT_USER_AGENT: str = "NerisApiClient/1.5.2"
+
 class GrantType(str, Enum):
     CLIENT_CREDENTIALS = "client_credentials"
     PASSWORD = "password"
@@ -17,13 +19,14 @@ class Config:
     client_secret: str | None = None
     grant_type: GrantType | None = None
     validate: bool | None = None
-    user_agent: str = "NerisApiClient/1.5.2"
+    user_agent: str = DEFAULT_USER_AGENT
 
     def __post_init__(self):
         # env var handling
         self.base_url = self.base_url or os.getenv("NERIS_BASE_URL")
         self.debug = self.debug if self.debug is not None else os.getenv("NERIS_DEBUG") == "true"
         self.validate = self.validate if self.validate is not None else os.getenv("NERIS_VALIDATE") == "true"
+        self.user_agent = self.user_agent and os.getenv("NERIS_USER_AGENT", DEFAULT_USER_AGENT)
 
         match os.getenv("NERIS_GRANT_TYPE"):
             case GrantType.PASSWORD:
