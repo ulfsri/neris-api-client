@@ -49,6 +49,8 @@ class _NerisApiClient:
         if config is None:
             config = Config()  # by default it loads from env
 
+        self._session.headers.update({"User-Agent": config.user_agent})
+
         match config.grant_type:
             case GrantType.CLIENT_CREDENTIALS:
                 assert config.client_id is not None
@@ -331,6 +333,7 @@ class NerisApiClient(_NerisApiClient):
         status: list[Literal["APPROVED", "PENDING_APPROVAL", "REJECTED", "SUBMITTED"]] | None = None,
         state: str | None = None,
         last_modified: str | None = None,
+        geo_format: Literal["url", "geojson"] | None = None,
         sort_by: Literal["call_create", "neris_id_entity", "incident_number", "dispatch_incident_number", "status", "last_modified"] | None = None,
         sort_direction: Literal["ASCENDING", "DESCENDING"] | None = None,
         page_size: int | None = None,
@@ -347,6 +350,7 @@ class NerisApiClient(_NerisApiClient):
             status=status,
             state=state,
             last_modified=last_modified,
+            geo_format=geo_format,
             sort_by=sort_by,
             sort_direction=sort_direction,
             page_size=page_size,
