@@ -17,6 +17,7 @@ class Config:
     client_secret: str | None = None
     grant_type: GrantType | None = None
     validate: bool | None = None
+    user_agent: str = "NerisApiClient/1.5.2"
 
     def __post_init__(self):
         # env var handling

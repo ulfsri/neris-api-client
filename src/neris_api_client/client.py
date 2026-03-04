@@ -49,6 +49,8 @@ class _NerisApiClient:
         if config is None:
             config = Config()  # by default it loads from env
 
+        self._session.headers.update({"User-Agent": config.user_agent})
+
         match config.grant_type:
             case GrantType.CLIENT_CREDENTIALS:
                 assert config.client_id is not None
