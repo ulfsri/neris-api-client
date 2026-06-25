@@ -5,4 +5,7 @@ datamodel-codegen \
     --url https://api.neris.fsri.org/v1/openapi.json \
     --input-file-type openapi \
     --output src/neris_api_client/models.py \
-    --output-model-type pydantic_v2.BaseModel
+    --output-model-type pydantic_v2.BaseModel \
+    --use-double-quotes
+
+black -l 100 src/neris_api_client/models.py
