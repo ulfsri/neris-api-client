@@ -8,4 +8,4 @@ datamodel-codegen \
     --output-model-type pydantic_v2.BaseModel \
     --use-double-quotes
 
-black -l 100 src/neris_api_client/models.py
+black -l 100 -t py310 src/neris_api_client/models.py
