@@ -42,13 +42,15 @@ class Encoder(json.JSONEncoder):
 
 class _NerisApiClient:
     config: Config
-    tokens: TokenSet | None = TokenSet(access_token="", refresh_token="", expires_at=datetime.min)
-    _session: requests.Session = requests.Session()
+    tokens: TokenSet
+    _session: requests.Session
 
     def __init__(self, config: Config | None = None):
         if config is None:
             config = Config()  # by default it loads from env
 
+        self.tokens = TokenSet(access_token="", refresh_token="", expires_at=datetime.min)
+        self._session = requests.Session()
         self._session.headers.update({"User-Agent": config.user_agent})
 
         match config.grant_type:
