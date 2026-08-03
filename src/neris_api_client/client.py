@@ -213,11 +213,9 @@ class _NerisApiClient:
         except requests.exceptions.HTTPError as e:
             try:
                 e.args = e.args + (e.response.json(),)
-            except requests.exceptions.JSONDecodeError as f:
+            except requests.exceptions.JSONDecodeError:
                 e.args = e.args + (e.response.text,)
-            finally:
-                print(str(e))
-                return res
+            raise
 
         try:
             response = res.json()
