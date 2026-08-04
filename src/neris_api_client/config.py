@@ -26,15 +26,16 @@ class Config:
         self.base_url = self.base_url or os.getenv("NERIS_BASE_URL")
         self.debug = self.debug if self.debug is not None else os.getenv("NERIS_DEBUG") == "true"
         self.validate = self.validate if self.validate is not None else os.getenv("NERIS_VALIDATE") == "true"
-        self.user_agent = self.user_agent and os.getenv("NERIS_USER_AGENT", DEFAULT_USER_AGENT)
+        self.user_agent = os.getenv("NERIS_USER_AGENT", self.user_agent)
 
-        match os.getenv("NERIS_GRANT_TYPE"):
+        grant_type = self.grant_type or os.getenv("NERIS_GRANT_TYPE")
+        self.grant_type = GrantType(grant_type) if grant_type is not None else None
+
+        match self.grant_type:
             case GrantType.PASSWORD:
-                self.grant_type = self.grant_type or GrantType.PASSWORD
                 self.username = self.username or os.getenv("NERIS_USERNAME")
                 self.password = self.password or os.getenv("NERIS_PASSWORD")
             case GrantType.CLIENT_CREDENTIALS:
-                self.grant_type = self.grant_type or GrantType.CLIENT_CREDENTIALS
                 self.client_id = self.client_id or os.getenv("NERIS_CLIENT_ID")
                 self.client_secret = self.client_secret or os.getenv("NERIS_CLIENT_SECRET")
 
