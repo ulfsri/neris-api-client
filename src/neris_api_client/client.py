@@ -1,5 +1,4 @@
 import base64
-from http import HTTPStatus
 import json
 from uuid import UUID
 from typing import List, Optional, Dict, Any, Literal
@@ -120,7 +119,7 @@ class _NerisApiClient:
                         },
                     )
 
-        if not res:
+        if res is None:
             return
 
         while True:
@@ -139,20 +138,24 @@ class _NerisApiClient:
                     ),
                 )
 
+            res.raise_for_status()
             got: dict = res.json()
 
             # Successfully generated tokens
-            if res.status_code == HTTPStatus.OK:
+            if "access_token" in got:
                 self.tokens = TokenSet(
                     access_token=got["access_token"],
-                    refresh_token=got["refresh_token"],
+                    refresh_token=got.get("refresh_token") or self.tokens.refresh_token,
                     expires_at=datetime.now() + timedelta(seconds=got["expires_in"]),
                 )
 
                 break
 
+            if "error" in got:
+                raise RuntimeError(f"Token endpoint returned OAuth error: {got['error']}")
+
             # Respond to MFA challenge
-            elif res.status_code == HTTPStatus.ACCEPTED:
+            if "challenge_name" in got and "session" in got:
                 code: str = input(f"Provide MFA code for {got['challenge_name']}: ")
 
                 res = self._session.post(
@@ -165,6 +168,9 @@ class _NerisApiClient:
                         got["challenge_name"]: code,
                     },
                 )
+                continue
+
+            raise RuntimeError("Token endpoint returned an unrecognized response payload")
 
     def _call(
         self,
