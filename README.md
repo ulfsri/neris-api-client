@@ -87,6 +87,15 @@ entity = client.get_entity("FD24027240")
 | debug     | Controls whether the application outputs debug information. |
 | validate  | Controls whether the client performs model validations.     |
 
+## Testing
+
+The test suite uses Python's standard library test runner. From the repository root, install the
+package into the active Python environment and run:
+
+```bash
+python -m pip install --editable .
+python -m unittest discover --start-directory tests --verbose
+```
 
 ## Disclaimer
 The models in this package are generated using [`datamodel-code-generator`](https://github.com/koxudaxi/datamodel-code-generator) and are not guaranteed
