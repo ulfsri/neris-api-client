@@ -120,7 +120,7 @@ class _NerisApiClient:
                         },
                     )
 
-        if not res:
+        if res is None:
             return
 
         while True:
@@ -139,7 +139,7 @@ class _NerisApiClient:
                     ),
                 )
 
-            got: dict = res.json()
+            got: dict = res.json() if res.status_code in (HTTPStatus.OK, HTTPStatus.ACCEPTED) else None
 
             # Successfully generated tokens
             if res.status_code == HTTPStatus.OK:
