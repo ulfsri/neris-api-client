@@ -120,7 +120,7 @@ class _NerisApiClient:
                         },
                     )
 
-        if not res:
+        if res is None:
             return
 
         while True:
@@ -139,7 +139,7 @@ class _NerisApiClient:
                     ),
                 )
 
-            got: dict = res.json()
+            got: dict = res.json() if res.status_code in (HTTPStatus.OK, HTTPStatus.ACCEPTED) else None
 
             # Successfully generated tokens
             if res.status_code == HTTPStatus.OK:
@@ -153,18 +153,51 @@ class _NerisApiClient:
 
             # Respond to MFA challenge
             elif res.status_code == HTTPStatus.ACCEPTED:
-                code: str = input(f"Provide MFA code for {got['challenge_name']}: ")
+                challenge_name = got["challenge_name"]
+                session = got["session"]
 
-                res = self._session.post(
-                    token_url,
-                    headers={"Content-Type": "application/x-www-form-urlencoded"},
-                    data={
-                        "grant_type": got["challenge_name"],
-                        "username": self.config.username,
-                        "session": got["session"],
-                        got["challenge_name"]: code,
-                    },
-                )
+                # TOTP codes (software_token_mfa) rotate every ~30s, so a code
+                # can expire between being generated and submitted. Allow a
+                # few attempts with a freshly entered code before giving up.
+                max_mfa_attempts = 3
+                for mfa_attempt in range(1, max_mfa_attempts + 1):
+                    code: str = input(f"Provide MFA code for {challenge_name}: ").strip()
+
+                    res = self._session.post(
+                        token_url,
+                        headers={"Content-Type": "application/x-www-form-urlencoded"},
+                        data={
+                            "grant_type": challenge_name,
+                            "username": self.config.username,
+                            "session": session,
+                            challenge_name: code,
+                        },
+                    )
+
+                    if res.status_code in (HTTPStatus.OK, HTTPStatus.ACCEPTED):
+                        break
+
+                    try:
+                        detail = res.json()
+                    except requests.exceptions.JSONDecodeError:
+                        detail = res.text
+
+                    if mfa_attempt < max_mfa_attempts:
+                        print(f"✗ MFA code rejected (HTTP {res.status_code}): {detail}. Please try again.")
+                    else:
+                        raise RuntimeError(
+                            f"MFA verification failed after {max_mfa_attempts} attempts: {detail}"
+                        )
+
+            # Any other response (e.g. bad credentials) is an error. Without
+            # this, the loop above would spin forever re-reading the same
+            # rejected response.
+            else:
+                try:
+                    detail = res.json()
+                except requests.exceptions.JSONDecodeError:
+                    detail = res.text
+                raise RuntimeError(f"Authentication failed (HTTP {res.status_code}): {detail}")
 
     def _call(
         self,
