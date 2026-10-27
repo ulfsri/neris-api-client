@@ -30,6 +30,8 @@ client = NerisApiClient(
         grant_type="password",
         username="neris.user@email.co",
         password="*******",
+        # Supply a custom user agent header value
+        user_agent="MyApp/1.0",
     )
 )
 
@@ -52,6 +54,8 @@ client = NerisApiClient(
         grant_type="client_credentials",
         client_id="********************",
         client_secret="***************",
+        # Supply a custom user agent header value
+        user_agent="FireFirst/1.0",
     )
 )
 
@@ -61,12 +65,12 @@ entity = client.get_entity("FD24027240")
 
 **Using environment varables to instantiate the library**
 
-[Configuration should be stored in the environment](https://12factor.net/config). The following uses `dotenv` to load the configuration, but you can use whatever you like. In the cloud, you might load all of these values into the environment from an encrypted parameter store. 
+[Configuration should be stored in the environment](https://12factor.net/config). The following uses `dotenv` to load the configuration, but you can use whatever you like. In the cloud, you might load all of these values into the environment from an encrypted parameter store.
 
 All variables prefixed are prefixed with `NERIS_`
 
-* See [env.example](./examples/.env.example) for the parameter options. 
-* Store the `/env` file in the current working directory. 
+* See [env.example](./examples/.env.example) for the parameter options.
+* Store the `/env` file in the current working directory.
 
 ```python
 from dotenv import load_dotenv

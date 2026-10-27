@@ -1,13 +1,18 @@
-from dataclasses import dataclass
-from datetime import datetime
-from enum import Enum
 import os
+from enum import Enum
+from datetime import datetime
+from dataclasses import dataclass
 
-DEFAULT_USER_AGENT: str = "NerisApiClient/1.5.2"
+
+def get_default_user_agent() -> str:
+    from . import __version__
+    return f"NerisApiClient/{__version__}"
+
 
 class GrantType(str, Enum):
     CLIENT_CREDENTIALS = "client_credentials"
     PASSWORD = "password"
+
 
 @dataclass
 class Config:
@@ -19,14 +24,14 @@ class Config:
     client_secret: str | None = None
     grant_type: GrantType | None = None
     validate: bool | None = None
-    user_agent: str = DEFAULT_USER_AGENT
+    user_agent: str | None = None
 
     def __post_init__(self):
         # env var handling
         self.base_url = self.base_url or os.getenv("NERIS_BASE_URL")
         self.debug = self.debug if self.debug is not None else os.getenv("NERIS_DEBUG") == "true"
         self.validate = self.validate if self.validate is not None else os.getenv("NERIS_VALIDATE") == "true"
-        self.user_agent = self.user_agent and os.getenv("NERIS_USER_AGENT", DEFAULT_USER_AGENT)
+        self.user_agent = self.user_agent or os.getenv("NERIS_USER_AGENT", get_default_user_agent())
 
         match os.getenv("NERIS_GRANT_TYPE"):
             case GrantType.PASSWORD:
