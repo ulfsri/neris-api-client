@@ -4,11 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neris_api_client"
-version = "1.5.6"
+version = "1.5.7"
 authors = [
   { name="Ben Coleman", email="ben.coleman@ul.org" },
   { name="Joseph Pagani", email="joseph.pagani@ul.org"},
-  { name="Daniel Liu", email="daniel.liu@ul.org"}
+  { name="Daniel Liu", email="daniel.liu@ul.org"},
+  { name="Matthew Sudol", email="matthew.sudol@ul.org"},
 ]
 description = "NERIS API Client"
 readme = "README.md"
