@@ -38,7 +38,7 @@ class Config:
 
         if self.ssl_verify is None:
             env_ssl_verify = os.getenv("NERIS_SSL_VERIFY")
-            if env_ssl_verify is not None:
+            if env_ssl_verify:
                 if env_ssl_verify.lower() in ("true", "1", "yes"):
                     self.ssl_verify = True
                 elif env_ssl_verify.lower() in ("false", "0", "no"):
