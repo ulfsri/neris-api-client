@@ -10,6 +10,8 @@ This API client does not directly follow semver practices. In order to remove co
 
 ## Installation
 
+Requires Python 3.10 or later.
+
 To install:
 
 ```bash
