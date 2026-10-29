@@ -145,7 +145,7 @@ class _NerisApiClient:
             if res.status_code == HTTPStatus.OK:
                 self.tokens = TokenSet(
                     access_token=got["access_token"],
-                    refresh_token=got["refresh_token"],
+                    refresh_token=got.get("refresh_token") or self.tokens.refresh_token,
                     expires_at=datetime.now() + timedelta(seconds=got["expires_in"]),
                 )
 
