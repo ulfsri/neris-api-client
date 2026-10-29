@@ -51,6 +51,10 @@ class _NerisApiClient:
 
         self._session.headers.update({"User-Agent": config.user_agent})
 
+        # Allow overriding TLS verification for networks with TLS-inspecting proxies (e.g. custom CA bundle path, or False to disable).
+        if config.ssl_verify is not None:
+            self._session.verify = config.ssl_verify
+
         match config.grant_type:
             case GrantType.CLIENT_CREDENTIALS:
                 assert config.client_id is not None

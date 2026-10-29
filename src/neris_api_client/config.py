@@ -25,6 +25,9 @@ class Config:
     grant_type: GrantType | None = None
     validate: bool | None = None
     user_agent: str | None = None
+    # True/unset = verify with certifi's bundle, False = disable verification (insecure),
+    # or a path to a CA bundle/cert file for environments behind TLS-inspecting proxies.
+    ssl_verify: bool | str | None = None
 
     def __post_init__(self):
         # env var handling
@@ -32,6 +35,16 @@ class Config:
         self.debug = self.debug if self.debug is not None else os.getenv("NERIS_DEBUG") == "true"
         self.validate = self.validate if self.validate is not None else os.getenv("NERIS_VALIDATE") == "true"
         self.user_agent = self.user_agent or os.getenv("NERIS_USER_AGENT", get_default_user_agent())
+
+        if self.ssl_verify is None:
+            env_ssl_verify = os.getenv("NERIS_SSL_VERIFY")
+            if env_ssl_verify is not None:
+                if env_ssl_verify.lower() in ("true", "1", "yes"):
+                    self.ssl_verify = True
+                elif env_ssl_verify.lower() in ("false", "0", "no"):
+                    self.ssl_verify = False
+                else:
+                    self.ssl_verify = env_ssl_verify  # path to CA bundle/cert file
 
         match os.getenv("NERIS_GRANT_TYPE"):
             case GrantType.PASSWORD:
