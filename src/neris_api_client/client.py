@@ -1,4 +1,5 @@
 import base64
+from enum import Enum
 from http import HTTPStatus
 import json
 from uuid import UUID
@@ -215,6 +216,16 @@ class _NerisApiClient:
                 data = model.model_validate_json(data).model_dump(mode="json", by_alias=True)
             if isinstance(data, dict):
                 data = model.model_validate(data).model_dump(mode="json", by_alias=True)
+
+        if params:
+            params = {
+                key: [item.value if isinstance(item, Enum) else item for item in value]
+                if isinstance(value, list)
+                else value.value
+                if isinstance(value, Enum)
+                else value
+                for key, value in params.items()
+            }
 
         res = getattr(self._session, method)(
             f"{self.config.base_url}{path}", json=data, params=params
@@ -455,7 +466,7 @@ class NerisApiClient(_NerisApiClient):
         return self._call(
             "put",
             f"/incident/{neris_id_entity}/{neris_id_incident}/incident_status",
-            data={"status": str(status)},
+            data={"status": status.value},
         )
 
     def create_api_integration(self, neris_id: str, title: str) -> Dict[str, Any]:
