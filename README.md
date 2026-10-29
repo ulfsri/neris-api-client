@@ -20,6 +20,20 @@ pip install neris-api-client
 
 Package published on PyPi: [`NERIS API Client`](https://pypi.org/project/neris-api-client/)
 
+## Model generation
+
+Install the locked development dependencies with `pipenv sync --dev`. The
+[generation script](./gen) downloads the live OpenAPI specification and overwrites
+[models.py](./src/neris_api_client/models.py), then formats it with Black.
+From a Bash shell, run `pipenv run bash gen`.
+
+Schema downloads explicitly use the generator's HTTPX2 backend, which
+datamodel-code-generator 0.76.2 labels experimental. HTTPX2 is pinned to 2.14.0
+to retain Python 3.10 support; HTTPX2 2.15 and later require Python 3.11.
+For manual `pipenv run datamodel-codegen` commands, include `--http-backend httpx2`
+so an installed copy of HTTPX does not take precedence.
+This development dependency does not change the client's Requests-based HTTP transport.
+
 ## Usage
 
 **Auth with password `auth` flow**
