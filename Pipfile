@@ -11,7 +11,7 @@ pydantic = {extras = ["email"], version = "*"}
 [dev-packages]
 twine = "*"
 build = "*"
-datamodel-code-generator = {version = "==0.44.0"}
+datamodel-code-generator = {version = "==0.76.2"}
 httpx = "==0.28.1"
 
 [requires]
