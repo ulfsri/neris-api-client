@@ -215,6 +215,8 @@ class _NerisApiClient:
                 data = model.model_validate_json(data).model_dump(mode="json", by_alias=True)
             if isinstance(data, dict):
                 data = model.model_validate(data).model_dump(mode="json", by_alias=True)
+        elif isinstance(data, str):
+            data = json.loads(data)
 
         res = getattr(self._session, method)(
             f"{self.config.base_url}{path}", json=data, params=params
