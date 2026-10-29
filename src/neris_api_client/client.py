@@ -420,7 +420,7 @@ class NerisApiClient(_NerisApiClient):
     ) -> Dict[str, Any]:
         return self._call(
             "post",
-            f"/entity/{neris_id_entity}/station/{neris_id_station}",
+            f"/entity/{neris_id_entity}/station/{neris_id_station}/unit",
             data=body,
             model=CreateUnitPayload,
         )
@@ -434,7 +434,7 @@ class NerisApiClient(_NerisApiClient):
     ) -> Dict[str, Any]:
         return self._call(
             "patch",
-            f"/entity/{neris_id}/station/{neris_id_station}/unit/{neris_id_unit}",
+            f"/entity/{neris_id_entity}/station/{neris_id_station}/unit/{neris_id_unit}",
             data=body,
             model=PatchUnitPayload,
         )
