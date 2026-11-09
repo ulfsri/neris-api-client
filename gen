@@ -3,6 +3,7 @@ set -e
 
 datamodel-codegen \
     --url https://api.neris.fsri.org/v1/openapi.json \
+    --http-backend httpx2 \
     --input-file-type openapi \
     --output src/neris_api_client/models.py \
     --output-model-type pydantic_v2.BaseModel \
